@@ -1,7 +1,7 @@
 using Gtk;
 
 int main(string[] args) {
-    var app = new Gtk.Application("com.4194304.hello_world", GLib.ApplicationFlags.DEFAULT_FLAGS);
+    var app = new Gtk.Application("com.w4194304.hello_world", GLib.ApplicationFlags.DEFAULT_FLAGS);
 
     app.activate.connect(() => {
         var window = new ApplicationWindow(app);
