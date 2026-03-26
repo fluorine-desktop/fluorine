@@ -18,6 +18,8 @@
         gtk4
         glib
         gobject-introspection
+        vala-language-server
+        vala-lint
       ];
     };
   };
