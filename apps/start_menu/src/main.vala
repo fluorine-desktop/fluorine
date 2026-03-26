@@ -1,5 +1,6 @@
 using Gtk;
 using GLib;
+using GtkLayerShell;
 
 public class StartMenu : Gtk.Application {
     public StartMenu () {
@@ -110,7 +111,7 @@ public class StartMenu : Gtk.Application {
                 SpawnFlags.SEARCH_PATH | SpawnFlags.DO_NOT_REAP_CHILD,
                 () => { Posix.setsid (); },
                 null
-                );
+            );
             win.close ();
         } catch (SpawnError e) {
             stderr.printf ("Failed to launch %s: %s\n", app.get_display_name (), e.message);
@@ -120,7 +121,16 @@ public class StartMenu : Gtk.Application {
     protected override void activate () {
         var win = new Gtk.ApplicationWindow (this);
         win.title = "Start Menu";
-        win.set_default_size (600, 400);
+        win.set_default_size (280, 550);
+        win.decorated = false;
+
+        GtkLayerShell.init_for_window (win);
+        GtkLayerShell.set_layer (win, GtkLayerShell.Layer.TOP);
+        GtkLayerShell.set_anchor (win, GtkLayerShell.Edge.BOTTOM, true);
+        GtkLayerShell.set_anchor (win, GtkLayerShell.Edge.LEFT, true);
+        GtkLayerShell.set_margin (win, GtkLayerShell.Edge.BOTTOM, 0);
+        GtkLayerShell.set_margin (win, GtkLayerShell.Edge.LEFT, 0);
+        GtkLayerShell.set_keyboard_mode (win, GtkLayerShell.KeyboardMode.EXCLUSIVE);
 
         var box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
         win.set_child (box);
@@ -155,7 +165,7 @@ public class StartMenu : Gtk.Application {
             var icon = app.get_icon ();
             if (icon != null) {
                 var img = new Gtk.Image.from_gicon (icon);
-                img.pixel_size = 32;
+                img.pixel_size = 24;
                 row_box.append (img);
             }
 

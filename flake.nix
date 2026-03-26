@@ -26,6 +26,7 @@
       buildInputs = with pkgs; [
         gtk4
         glib
+        gtk4-layer-shell
       ];
     };
 
@@ -37,6 +38,7 @@
         pkg-config
         gtk4
         glib
+        gtk4-layer-shell
         gobject-introspection
         vala-language-server
         vala-lint
