@@ -5,7 +5,7 @@ on:
 
 jobs:
   lint:
-    name: vala-lint
+    name: lint
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
@@ -16,20 +16,7 @@ jobs:
         run: nix develop -c io.elementary.vala-lint
 
   build:
-    name: meson build (devshell)
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - uses: cachix/install-nix-action@v31
-        with:
-          github_access_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Setup
-        run: nix develop -c meson setup build
-      - name: Build
-        run: nix develop -c ninja -C build
-
-  nix-build:
-    name: nix build (flake package)
+    name: build
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
