@@ -44,6 +44,7 @@
             gobject-introspection
             vala-language-server
             vala-lint
+            labwc
           ];
         };
       }
