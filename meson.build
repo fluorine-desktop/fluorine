@@ -1,4 +1,6 @@
-project('flexperimental', 'vala')
+project('fluorine', 'vala', 'c', version: '0.1.0')
 gtk_dep = dependency('gtk4')
+subdir('flapp')
+subdir('flstart')
 subdir('apps/hello_world')
 subdir('apps/start_menu')

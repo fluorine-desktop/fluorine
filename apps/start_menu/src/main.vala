@@ -2,15 +2,32 @@ using Gtk;
 using GLib;
 using GtkLayerShell;
 
-public class StartMenu : Gtk.Application {
+public class StartMenu : Gtk.Application, Flapp.Component {
+    public string component_name { get { return "start-menu"; } }
+
+    public void start (Flapp.Environment env) {
+        try {
+            this.register (null);
+        } catch (GLib.Error e) {
+            warning ("start-menu: failed to register: %s", e.message);
+        }
+    }
+
+    public void stop () {
+        this.quit ();
+    }
+
+    public void show_window () {
+        this.activate ();
+    }
+
     public StartMenu () {
         Object (application_id: "sh.fluorine.StartMenu",
-               flags: ApplicationFlags.DEFAULT_FLAGS);
+                flags: ApplicationFlags.DEFAULT_FLAGS);
     }
 
     int score_app (AppInfo app, string query) {
         string q = query.down ().strip ();
-
         var name = app.get_display_name ().down ();
         var exec = app.get_executable () != null ? app.get_executable ().down () : "";
 
@@ -21,34 +38,17 @@ public class StartMenu : Gtk.Application {
 
         foreach (var term in terms) {
             if (term == "") continue;
-
             bool matched = false;
 
-            if (name.has_prefix (term)) {
-                score += 100;
-                matched = true;
-            }
+            if (name.has_prefix (term)) { score += 100; matched = true; }
 
             foreach (var word in name.split (" ")) {
-                if (word.has_prefix (term)) {
-                    score += 75;
-                    matched = true;
-                    break;
-                }
+                if (word.has_prefix (term)) { score += 75; matched = true; break; }
             }
 
-            if (!matched && name.contains (term)) {
-                score += 50;
-                matched = true;
-            }
-
-            if (!matched && exec.contains (term)) {
-                score += 30;
-                matched = true;
-            }
-
-            if (!matched)
-                return 0;
+            if (!matched && name.contains (term)) { score += 50; matched = true; }
+            if (!matched && exec.contains (term)) { score += 30; matched = true; }
+            if (!matched) return 0;
         }
 
         return score;
@@ -66,7 +66,6 @@ public class StartMenu : Gtk.Application {
     Gtk.ListBoxRow? navigate (Gtk.ListBox list, Gtk.ListBoxRow? current, int dir) {
         if (current == null)
             return dir > 0 ? first_visible_row (list) : null;
-
         int i = current.get_index () + dir;
         while (i >= 0) {
             var row = list.get_row_at_index (i);
@@ -79,7 +78,6 @@ public class StartMenu : Gtk.Application {
 
     void launch_app (AppInfo app, Gtk.ApplicationWindow win) {
         string[]? argv = null;
-
         var desktop_app = app as DesktopAppInfo;
         if (desktop_app != null) {
             string? cmdline = desktop_app.get_commandline ();
@@ -96,22 +94,14 @@ public class StartMenu : Gtk.Application {
 
         if (argv == null) {
             string? exe = app.get_executable ();
-            if (exe == null) {
-                stderr.printf ("No executable found for %s\n", app.get_display_name ());
-                return;
-            }
+            if (exe == null) { stderr.printf ("No executable for %s\n", app.get_display_name ()); return; }
             argv = { exe };
         }
 
         try {
-            Process.spawn_async (
-                null,
-                argv,
-                null,
+            Process.spawn_async (null, argv, null,
                 SpawnFlags.SEARCH_PATH | SpawnFlags.DO_NOT_REAP_CHILD,
-                () => { Posix.setsid (); },
-                null
-            );
+                () => { Posix.setsid (); }, null);
             win.close ();
         } catch (SpawnError e) {
             stderr.printf ("Failed to launch %s: %s\n", app.get_display_name (), e.message);
@@ -137,10 +127,8 @@ public class StartMenu : Gtk.Application {
 
         var entry = new Gtk.SearchEntry ();
         entry.placeholder_text = "Search apps…";
-        entry.margin_top = 8;
-        entry.margin_bottom = 8;
-        entry.margin_start = 8;
-        entry.margin_end = 8;
+        entry.margin_top = 8; entry.margin_bottom = 8;
+        entry.margin_start = 8; entry.margin_end = 8;
         box.append (entry);
 
         var scroll = new Gtk.ScrolledWindow ();
@@ -151,16 +139,12 @@ public class StartMenu : Gtk.Application {
         list.selection_mode = Gtk.SelectionMode.SINGLE;
         scroll.set_child (list);
 
-        var all_apps = AppInfo.get_all ();
-
-        foreach (var app in all_apps) {
+        foreach (var app in AppInfo.get_all ()) {
             if (!app.should_show ()) continue;
 
             var row_box = new Gtk.Box (Gtk.Orientation.HORIZONTAL, 8);
-            row_box.margin_top = 4;
-            row_box.margin_bottom = 4;
-            row_box.margin_start = 8;
-            row_box.margin_end = 8;
+            row_box.margin_top = 4; row_box.margin_bottom = 4;
+            row_box.margin_start = 8; row_box.margin_end = 8;
 
             var icon = app.get_icon ();
             if (icon != null) {
@@ -170,7 +154,6 @@ public class StartMenu : Gtk.Application {
             }
 
             var label_box = new Gtk.Box (Gtk.Orientation.VERTICAL, 0);
-
             var name_label = new Gtk.Label (app.get_display_name ());
             name_label.halign = Gtk.Align.START;
             label_box.append (name_label);
@@ -183,21 +166,18 @@ public class StartMenu : Gtk.Application {
                 desc_label.ellipsize = Pango.EllipsizeMode.END;
                 label_box.append (desc_label);
             }
-
             row_box.append (label_box);
 
             var list_row = new Gtk.ListBoxRow ();
             list_row.set_child (row_box);
             list_row.set_data ("app-info", app);
-
             list.append (list_row);
         }
 
         list.set_filter_func ((row) => {
             var query = entry.text;
             if (query.strip () == "") return true;
-            var app = (AppInfo) row.get_data<AppInfo> ("app-info");
-            return score_app (app, query) > 0;
+            return score_app ((AppInfo) row.get_data<AppInfo> ("app-info"), query) > 0;
         });
 
         list.set_sort_func ((a, b) => {
@@ -247,6 +227,11 @@ public class StartMenu : Gtk.Application {
         win.present ();
         entry.grab_focus ();
     }
+}
+
+[CCode (cname = "fluorine_component_create")]
+public Flapp.Component fluorine_component_create () {
+    return new StartMenu ();
 }
 
 public static int main (string[] args) {
