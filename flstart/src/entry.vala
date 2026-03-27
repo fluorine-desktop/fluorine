@@ -44,6 +44,7 @@ namespace Flstart {
         EXIT,
         PATH,
         DELAY,
+        NEW_WAYLAND_SOCKET,
     }
 
     public class ProcessEntry : StartupEntry {
@@ -54,6 +55,8 @@ namespace Flstart {
         public string wait_for { get; set; default = ""; }
         public uint timeout_ms { get; set; default = 10000; }
         public bool restart { get; set; default = false; }
+        public string[] env_overrides { get; set; default = {}; }
+        public string[] unset_env { get; set; default = {}; }
 
         public override string label { get { return _label; } }
 
@@ -69,7 +72,16 @@ namespace Flstart {
 
         public override void launch (Flapp.Environment env) throws GLib.Error {
             message ("flstart: launching '%s'", _label);
-            var proc = new GLib.Subprocess.newv (_argv, GLib.SubprocessFlags.NONE);
+
+            var launcher = new GLib.SubprocessLauncher (GLib.SubprocessFlags.NONE);
+            foreach (var kv in env_overrides) {
+                var parts = kv.split ("=", 2);
+                launcher.setenv (parts[0], parts[1], true);
+            }
+            foreach (var key in unset_env)
+                launcher.unsetenv (key);
+
+            var proc = launcher.spawnv (_argv);
 
             if (restart) {
                 proc.wait_async.begin (null, (obj, res) => {
@@ -91,6 +103,9 @@ namespace Flstart {
                 case WaitMode.DELAY:
                     GLib.Thread.usleep (timeout_ms * 1000);
                     break;
+                case WaitMode.NEW_WAYLAND_SOCKET:
+                    wait_for_new_wayland_socket ();
+                    break;
                 case WaitMode.NONE:
                 default:
                     break;
@@ -108,6 +123,44 @@ namespace Flstart {
                 GLib.Thread.usleep (50000);
             }
             message ("flstart: '%s' appeared", path);
+        }
+
+        private void wait_for_new_wayland_socket () {
+            var runtime = GLib.Environment.get_user_runtime_dir ();
+            message ("flstart: waiting for new wayland socket in '%s'", runtime);
+
+            // snapshot existing sockets
+            var before = new GLib.GenericSet<string> (str_hash, str_equal);
+            try {
+                var dir = GLib.Dir.open (runtime);
+                string? name;
+                while ((name = dir.read_name ()) != null) {
+                    if (name.has_prefix ("wayland-") && !name.has_suffix (".lock"))
+                        before.add (name);
+                }
+            } catch {}
+
+            var deadline = GLib.get_monotonic_time () + (timeout_ms * 1000);
+            while (true) {
+                if (GLib.get_monotonic_time () > deadline) {
+                    warning ("flstart: timed out waiting for new wayland socket");
+                    return;
+                }
+                GLib.Thread.usleep (50000);
+
+                try {
+                    var dir = GLib.Dir.open (runtime);
+                    string? name;
+                    while ((name = dir.read_name ()) != null) {
+                        if (name.has_prefix ("wayland-") && !name.has_suffix (".lock") && !before.contains (name)) {
+                            var socket = name;
+                            message ("flstart: new wayland socket '%s' appeared", socket);
+                            GLib.Environment.set_variable ("WAYLAND_DISPLAY", socket, true);
+                            return;
+                        }
+                    }
+                } catch {}
+            }
         }
     }
 

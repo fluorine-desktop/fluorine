@@ -6,10 +6,10 @@ int main (string[] args) {
     Flstart.StartupEntry[] sequence = {
 
         new Flstart.ProcessEntry.argv ("labwc", { "labwc" }) {
-            wait_mode = Flstart.WaitMode.PATH,
-            wait_for = GLib.Path.build_filename (runtime, "wayland-1"),
+            wait_mode = Flstart.WaitMode.NEW_WAYLAND_SOCKET,
             timeout_ms = 5000,
             restart = true,
+            unset_env = { "WAYLAND_DISPLAY" },
         },
 
         new Flstart.PluginEntry ("libhello_world", plugin_dir),
