@@ -129,7 +129,6 @@ namespace Flstart {
             var runtime = GLib.Environment.get_user_runtime_dir ();
             message ("flstart: waiting for new wayland socket in '%s'", runtime);
 
-            // snapshot existing sockets
             var before = new GLib.GenericSet<string> (str_hash, str_equal);
             try {
                 var dir = GLib.Dir.open (runtime);
