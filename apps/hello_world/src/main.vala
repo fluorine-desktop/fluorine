@@ -1,32 +1,17 @@
 using Gtk;
 
-public class HelloWorld : Gtk.Application, Flapp.Component {
-    public string component_name { get { return "hello-world"; } }
+int main (string[] args) {
+    var app = new Gtk.Application ("com.w4194304.hello_world", GLib.ApplicationFlags.DEFAULT_FLAGS);
 
-    public HelloWorld () {
-        Object (application_id: "sh.fluorine.HelloWorld",
-                flags: ApplicationFlags.DEFAULT_FLAGS);
-    }
+    app.activate.connect (() => {
+        var window = new ApplicationWindow (app);
+        window.title = "Hello, World!";
+        window.set_default_size (300, 200);
 
-    public void start (Flapp.Environment env) {
-        try { this.register (null); } catch (GLib.Error e) {
-            warning ("hello-world: register failed: %s", e.message);
-        }
-        this.activate ();
-    }
+        var label = new Label ("Hello, World!");
+        window.set_child (label);
+        window.present ();
+    });
 
-    public void stop () { this.quit (); }
-
-    protected override void activate () {
-        var win = new Gtk.ApplicationWindow (this);
-        win.title = "Hello, World!";
-        win.set_default_size (300, 200);
-        win.set_child (new Gtk.Label ("Hello, World!"));
-        win.present ();
-    }
-}
-
-[CCode (cname = "fluorine_component_create")]
-public Flapp.Component fluorine_component_create () {
-    return new HelloWorld ();
+    return app.run (args);
 }
