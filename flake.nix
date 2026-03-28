@@ -45,6 +45,7 @@
             vala-language-server
             vala-lint
             labwc
+            wlr-randr
           ];
         };
       }
