@@ -7,7 +7,7 @@ int main (string[] args) {
 
         new Flstart.ProcessEntry.argv ("labwc", { "labwc" }) {
             wait_mode = Flstart.WaitMode.NEW_WAYLAND_SOCKET,
-            timeout_ms = 5000,
+            timeout_ms = 15000,
             restart = true,
             unset_env = { "WAYLAND_DISPLAY" },
         },
